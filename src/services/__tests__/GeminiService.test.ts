@@ -7,23 +7,33 @@ import {
 
 // Mock the GoogleGenerativeAI module
 jest.mock('@google/generative-ai', () => {
-  const generateContentMock = jest.fn();
+  // Mock implementation of generateContent
+  const mockGenerateContent = jest.fn();
+  
+  // Mock implementation of the model
+  const mockModel = {
+    generateContent: mockGenerateContent
+  };
+  
+  // Mock implementation of getGenerativeModel
+  const mockGetGenerativeModel = jest.fn().mockReturnValue(mockModel);
+  
+  // Mock implementation of the GoogleGenerativeAI class
   return {
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockImplementation(() => ({
-        generateContent: generateContentMock
-      }))
-    })),
+    GoogleGenerativeAI: jest.fn().mockImplementation(() => {
+      return {
+        getGenerativeModel: mockGetGenerativeModel
+      };
+    }),
     HarmCategory: {
       HARM_CATEGORY_HARASSMENT: 'HARM_CATEGORY_HARASSMENT',
       HARM_CATEGORY_HATE_SPEECH: 'HARM_CATEGORY_HATE_SPEECH',
       HARM_CATEGORY_SEXUALLY_EXPLICIT: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-      HARM_CATEGORY_DANGEROUS_CONTENT: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+      HARM_CATEGORY_DANGEROUS_CONTENT: 'HARM_CATEGORY_DANGEROUS_CONTENT'
     },
     HarmBlockThreshold: {
-      BLOCK_MEDIUM_AND_ABOVE: 'BLOCK_MEDIUM_AND_ABOVE',
-    },
-    generateContentMock
+      BLOCK_MEDIUM_AND_ABOVE: 'BLOCK_MEDIUM_AND_ABOVE'
+    }
   };
 });
 
@@ -37,7 +47,7 @@ describe('GeminiService', () => {
 
   describe('identifyPlant', () => {
     it('should successfully identify a plant', async () => {
-      // Mock successful response
+      // Mock the response from the Gemini API
       const mockResponse = {
         response: {
           text: () => JSON.stringify({
@@ -49,9 +59,12 @@ describe('GeminiService', () => {
           })
         }
       };
-      
-      require('@google/generative-ai').generateContentMock.mockResolvedValue(mockResponse);
-      
+
+      // Set up the mock to return our mock response
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockResolvedValue(mockResponse);
+
+      // Call the function
       const result = await identifyPlant(sampleBase64Image);
       
       expect(result).toEqual({
@@ -61,18 +74,22 @@ describe('GeminiService', () => {
         description: 'A popular tropical houseplant with distinctive split leaves',
         tags: ['tropical', 'houseplant', 'foliage']
       });
-      
-      // Verify the model name is correct
-      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
-      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+
+      // Verify the mock was called with the correct model name
+      const mockGetGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+      expect(mockGenerateContent).toHaveBeenCalled();
     });
 
     it('should handle errors and return fallback data', async () => {
-      // Mock error response
-      require('@google/generative-ai').generateContentMock.mockRejectedValue(new Error('API error'));
-      
+      // Mock the API to throw an error
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockRejectedValue(new Error('API error'));
+
+      // Call the function
       const result = await identifyPlant(sampleBase64Image);
       
+      // Verify fallback data is returned
       expect(result).toEqual({
         name: 'Identification Failed',
         scientificName: 'Error processing image',
@@ -85,7 +102,7 @@ describe('GeminiService', () => {
 
   describe('assessPlantHealth', () => {
     it('should successfully assess plant health', async () => {
-      // Mock successful response
+      // Mock the response from the Gemini API
       const mockResponse = {
         response: {
           text: () => JSON.stringify({
@@ -95,9 +112,12 @@ describe('GeminiService', () => {
           })
         }
       };
-      
-      require('@google/generative-ai').generateContentMock.mockResolvedValue(mockResponse);
-      
+
+      // Set up the mock to return our mock response
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockResolvedValue(mockResponse);
+
+      // Call the function
       const result = await assessPlantHealth(sampleBase64Image);
       
       expect(result).toEqual({
@@ -105,36 +125,40 @@ describe('GeminiService', () => {
         summary: 'The plant appears to be in good health with no visible issues.',
         issues: []
       });
-      
-      // Verify the model name is correct
-      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
-      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+
+      // Verify the mock was called with the correct model name
+      const mockGetGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+      expect(mockGenerateContent).toHaveBeenCalled();
     });
 
     it('should handle errors and return fallback data', async () => {
-      // Mock error response
-      require('@google/generative-ai').generateContentMock.mockRejectedValue(new Error('API error'));
-      
+      // Mock the API to throw an error
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockRejectedValue(new Error('API error'));
+
+      // Call the function
       const result = await assessPlantHealth(sampleBase64Image);
       
+      // Verify fallback data is returned
       expect(result).toEqual({
         status: 'Needs attention',
         summary: 'There was an error analyzing this image. Please try again with a clearer image of the plant.',
         issues: [
           {
             name: 'Analysis Error',
-            description: 'The system encountered an error while analyzing this plant.',
             severity: 'medium',
-            solution: 'Try taking a clearer photo with good lighting, focusing on the plant\'s leaves and stems.',
-          },
-        ],
+            description: 'The system encountered an error while analyzing this plant.',
+            solution: 'Try taking a clearer photo with good lighting, focusing on the plant\'s leaves and stems.'
+          }
+        ]
       });
     });
   });
 
   describe('getPlantCareRecommendations', () => {
     it('should successfully get plant care recommendations', async () => {
-      // Mock successful response
+      // Mock the response from the Gemini API
       const mockResponse = {
         response: {
           text: () => JSON.stringify({
@@ -146,9 +170,12 @@ describe('GeminiService', () => {
           })
         }
       };
-      
-      require('@google/generative-ai').generateContentMock.mockResolvedValue(mockResponse);
-      
+
+      // Set up the mock to return our mock response
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockResolvedValue(mockResponse);
+
+      // Call the function
       const result = await getPlantCareRecommendations('Monstera Deliciosa', 'Monstera deliciosa');
       
       expect(result).toEqual({
@@ -158,24 +185,28 @@ describe('GeminiService', () => {
         temperature: 'Prefers temperatures between 65-85°F (18-29°C) with high humidity.',
         additionalTips: 'Wipe leaves occasionally to remove dust and improve photosynthesis.'
       });
-      
-      // Verify the model name is correct
-      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
-      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+
+      // Verify the mock was called with the correct model name
+      const mockGetGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(mockGetGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
+      expect(mockGenerateContent).toHaveBeenCalled();
     });
 
     it('should handle errors and return fallback data', async () => {
-      // Mock error response
-      require('@google/generative-ai').generateContentMock.mockRejectedValue(new Error('API error'));
+      // Mock the API to throw an error
+      const mockGenerateContent = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel().generateContent;
+      mockGenerateContent.mockRejectedValue(new Error('API error'));
+
+      // Call the function
+      const result = await getPlantCareRecommendations('Monstera Deliciosa', 'Monstera deliciosa');
       
-      const result = await getPlantCareRecommendations('Monstera Deliciosa');
-      
+      // Verify fallback data is returned
       expect(result).toEqual({
         watering: 'Water when the top inch of soil feels dry.',
         light: 'Provide bright, indirect light.',
         soil: 'Use well-draining potting mix.',
         temperature: 'Keep in normal room temperature (65-75°F/18-24°C).',
-        additionalTips: 'Research specific care requirements for this plant species.',
+        additionalTips: 'Research specific care requirements for this plant species.'
       });
     });
   });

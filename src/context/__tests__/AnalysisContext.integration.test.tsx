@@ -4,11 +4,7 @@ import { AnalysisProvider, useAnalysis } from '../AnalysisContext';
 import * as GeminiService from '../../services/GeminiService';
 
 // Mock the GeminiService
-jest.mock('../../services/GeminiService', () => ({
-  identifyPlant: jest.fn(),
-  assessPlantHealth: jest.fn(),
-  getPlantCareRecommendations: jest.fn(),
-}));
+jest.mock('../../services/GeminiService');
 
 // Sample test data
 const sampleImageUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==';
@@ -50,7 +46,7 @@ describe('AnalysisContext Integration', () => {
 
     const mockHealth = {
       status: 'Healthy',
-      summary: 'The plant appears to be in good health with no visible issues.',
+      summary: 'Your plant appears to be in good health overall.',
       issues: [],
     };
 
@@ -62,6 +58,7 @@ describe('AnalysisContext Integration', () => {
       additionalTips: 'Wipe leaves occasionally to remove dust and improve photosynthesis.',
     };
 
+    // Setup mock implementations
     (GeminiService.identifyPlant as jest.Mock).mockResolvedValue(mockIdentification);
     (GeminiService.assessPlantHealth as jest.Mock).mockResolvedValue(mockHealth);
     (GeminiService.getPlantCareRecommendations as jest.Mock).mockResolvedValue(mockCare);
@@ -84,12 +81,13 @@ describe('AnalysisContext Integration', () => {
 
     // Wait for the analysis to complete
     await waitFor(() => {
-      expect(screen.getByTestId('analysis-result')).toBeInTheDocument();
-    });
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
 
-    // Verify the result is displayed correctly
+    // Now check for the analysis result
+    expect(screen.getByTestId('analysis-result')).toBeInTheDocument();
     expect(screen.getByText('Monstera Deliciosa')).toBeInTheDocument();
-    expect(screen.getByText('The plant appears to be in good health with no visible issues.')).toBeInTheDocument();
+    expect(screen.getByText('Your plant appears to be in good health overall.')).toBeInTheDocument();
 
     // Verify that the service functions were called with the correct parameters
     expect(GeminiService.identifyPlant).toHaveBeenCalledWith(sampleImageUrl);
@@ -100,6 +98,10 @@ describe('AnalysisContext Integration', () => {
   it('should handle errors during analysis', async () => {
     // Mock an error in the GeminiService
     (GeminiService.identifyPlant as jest.Mock).mockRejectedValue(new Error('API error'));
+    
+    // Make sure the other mocks are not set to resolve
+    (GeminiService.assessPlantHealth as jest.Mock).mockReset();
+    (GeminiService.getPlantCareRecommendations as jest.Mock).mockReset();
 
     // Render the test component with the AnalysisProvider
     render(
@@ -117,12 +119,16 @@ describe('AnalysisContext Integration', () => {
     // Check that loading state is shown
     expect(screen.getByTestId('loading')).toBeInTheDocument();
 
-    // Wait for the error to be displayed
+    // Wait for the loading state to disappear
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    // Now check for the error message
     await waitFor(() => {
       expect(screen.getByTestId('error')).toBeInTheDocument();
-    });
-
-    // Verify the error message
+    }, { timeout: 1000 });
+    
     expect(screen.getByTestId('error').textContent).toContain('Error analyzing image');
   });
 }); 

@@ -1,6 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
@@ -24,4 +24,8 @@ module.exports = {
       statements: 70,
     },
   },
+  modulePathIgnorePatterns: [
+    '<rootDir>/plant-analyzer/',
+    '<rootDir>/node_modules/',
+  ],
 }; 

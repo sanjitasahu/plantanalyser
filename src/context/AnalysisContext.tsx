@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { AnalysisResult, PlantIdentification, PlantHealth } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { identifyPlant, assessPlantHealth, getPlantCareRecommendations } from '../services/GeminiService';
 
 interface AnalysisContextType {
   analysisResults: AnalysisResult[];
@@ -42,34 +43,13 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
       setIsAnalyzing(true);
       setError(null);
 
-      // In a real app, this would call the Gemini API
-      // For now, we'll simulate a response with mock data
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Mock identification data
-      const mockIdentification: PlantIdentification = {
-        name: 'Monstera Deliciosa',
-        scientificName: 'Monstera deliciosa',
-        confidence: 0.92,
-        description: 'The Monstera deliciosa is a species of flowering plant native to tropical forests of southern Mexico, south to Panama.',
-        tags: ['tropical', 'houseplant', 'large leaves']
-      };
-
-      // Mock health assessment
-      const mockHealth: PlantHealth = {
-        status: 'Healthy',
-        summary: 'Your plant appears to be in good health overall.',
-        issues: plantId ? [] : [
-          {
-            name: 'Leaf Browning',
-            description: 'Some leaves show slight browning at the edges',
-            severity: 'low',
-            solution: 'Increase humidity and ensure consistent watering'
-          }
-        ]
-      };
+      // Use the GeminiService to analyze the image
+      const identification = await identifyPlant(imageUrl);
+      const health = await assessPlantHealth(imageUrl);
+      const care = await getPlantCareRecommendations(
+        identification.name, 
+        identification.scientificName
+      );
 
       // Create analysis result
       const newAnalysis: AnalysisResult = {
@@ -77,15 +57,9 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
         plantId: plantId || '',
         date: new Date().toISOString(),
         imageUrl,
-        identification: mockIdentification,
-        health: mockHealth,
-        care: {
-          watering: 'Water once a week, allowing soil to dry out between waterings',
-          light: 'Place in bright, indirect light',
-          soil: 'Well-draining potting mix with peat moss and perlite',
-          temperature: 'Maintain temperature between 65-85°F and humidity around 60%',
-          additionalTips: 'Fertilize monthly during growing season'
-        }
+        identification,
+        health,
+        care
       };
 
       setCurrentAnalysis(newAnalysis);
@@ -93,8 +67,8 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
 
       return newAnalysis;
     } catch (err) {
-      setError('Failed to analyze image');
-      console.error(err);
+      setError('Error analyzing image. Please try again.');
+      console.error('Analysis error:', err);
       return undefined;
     } finally {
       setIsAnalyzing(false);
