@@ -61,6 +61,10 @@ describe('GeminiService', () => {
         description: 'A popular tropical houseplant with distinctive split leaves',
         tags: ['tropical', 'houseplant', 'foliage']
       });
+      
+      // Verify the model name is correct
+      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
     });
 
     it('should handle errors and return fallback data', async () => {
@@ -101,6 +105,10 @@ describe('GeminiService', () => {
         summary: 'The plant appears to be in good health with no visible issues.',
         issues: []
       });
+      
+      // Verify the model name is correct
+      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
     });
 
     it('should handle errors and return fallback data', async () => {
@@ -150,6 +158,10 @@ describe('GeminiService', () => {
         temperature: 'Prefers temperatures between 65-85°F (18-29°C) with high humidity.',
         additionalTips: 'Wipe leaves occasionally to remove dust and improve photosynthesis.'
       });
+      
+      // Verify the model name is correct
+      const getGenerativeModel = require('@google/generative-ai').GoogleGenerativeAI().getGenerativeModel;
+      expect(getGenerativeModel).toHaveBeenCalledWith({ model: 'gemini-1.5-flash-8b' });
     });
 
     it('should handle errors and return fallback data', async () => {
@@ -160,10 +172,10 @@ describe('GeminiService', () => {
       
       expect(result).toEqual({
         watering: 'Water when the top inch of soil feels dry.',
-        light: 'Moderate indirect light is generally suitable.',
-        soil: 'Well-draining potting mix recommended.',
-        temperature: 'Keep between 65-80°F (18-27°C) with moderate humidity.',
-        additionalTips: 'Unable to provide specific care tips for this plant. Consider researching care requirements for this specific species.',
+        light: 'Provide bright, indirect light.',
+        soil: 'Use well-draining potting mix.',
+        temperature: 'Keep in normal room temperature (65-75°F/18-24°C).',
+        additionalTips: 'Research specific care requirements for this plant species.',
       });
     });
   });
