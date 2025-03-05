@@ -36,9 +36,26 @@ const GeminiApiDemo: React.FC = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('Image file is too large. Please use an image smaller than 10MB.');
+        return;
+      }
+      
+      // Check file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setError('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setImageUrl(reader.result as string);
+        setError(null); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError('Error reading the image file. Please try another image.');
       };
       reader.readAsDataURL(file);
     }
@@ -61,7 +78,18 @@ const GeminiApiDemo: React.FC = () => {
       setHealth(null);
       setCare(null);
     } catch (err) {
-      setError('Error identifying plant: ' + (err instanceof Error ? err.message : String(err)));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('Base64')) {
+        setError('Error processing image: The image format is not supported. Please try a JPEG or PNG image.');
+      } else if (errorMessage.includes('400')) {
+        setError('Error from Gemini API: The image could not be processed. Try a clearer image with better lighting, or a different image format.');
+      } else {
+        setError('Error identifying plant: ' + errorMessage);
+      }
+      
+      console.error('Plant identification error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +108,18 @@ const GeminiApiDemo: React.FC = () => {
       const result = await assessPlantHealth(imageUrl);
       setHealth(result);
     } catch (err) {
-      setError('Error assessing plant health: ' + (err instanceof Error ? err.message : String(err)));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('Base64')) {
+        setError('Error processing image: The image format is not supported. Please try a JPEG or PNG image.');
+      } else if (errorMessage.includes('400')) {
+        setError('Error from Gemini API: The image could not be processed. Try a clearer image with better lighting, or a different image format.');
+      } else {
+        setError('Error assessing plant health: ' + errorMessage);
+      }
+      
+      console.error('Plant health assessment error:', err);
     } finally {
       setIsLoading(false);
     }

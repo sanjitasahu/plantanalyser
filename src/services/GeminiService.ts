@@ -37,17 +37,160 @@ const safetySettings = [
   },
 ];
 
+// Helper function to convert WebP image to JPEG format
+const convertWebPToJPEG = async (base64Data: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Extract the base64 data without the prefix
+      const matches = base64Data.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        return resolve(base64Data); // Return original if not in expected format
+      }
+      
+      const mimeType = matches[1];
+      // If not WebP, return the original
+      if (!mimeType.includes('webp')) {
+        return resolve(base64Data);
+      }
+      
+      // Create an image element to load the WebP
+      const img = new Image();
+      img.onload = () => {
+        // Create a canvas to draw the image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the image on the canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Failed to get canvas context'));
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        
+        // Convert to JPEG format
+        const jpegBase64 = canvas.toDataURL('image/jpeg', 0.9);
+        resolve(jpegBase64);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image for conversion'));
+      };
+      
+      // Set the source to the WebP image
+      img.src = base64Data;
+    } catch (error) {
+      console.error('Error converting WebP to JPEG:', error);
+      resolve(base64Data); // Return original on error
+    }
+  });
+};
+
 // Helper function to convert base64 image data to a Part object for the Gemini API
 const base64ToImagePart = (base64Data: string): Part => {
-  // Remove data URL prefix if present
-  const base64WithoutPrefix = base64Data.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
-  
-  return {
-    inlineData: {
-      data: base64WithoutPrefix,
-      mimeType: 'image/jpeg'
+  try {
+    // Check if the data is a data URL
+    if (base64Data.startsWith('data:')) {
+      // Extract the MIME type and base64 data
+      const matches = base64Data.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      
+      if (!matches || matches.length !== 3) {
+        throw new Error('Invalid data URL format');
+      }
+      
+      const mimeType = matches[1];
+      const base64 = matches[2];
+      
+      // Ensure the base64 string is valid
+      // Remove any whitespace or line breaks that might be present
+      const cleanBase64 = base64.replace(/\s/g, '');
+      
+      return {
+        inlineData: {
+          data: cleanBase64,
+          mimeType: mimeType.includes('webp') ? 'image/jpeg' : mimeType
+        }
+      };
+    } else {
+      // If it's already a raw base64 string without the data URL prefix
+      return {
+        inlineData: {
+          data: base64Data.replace(/\s/g, ''),
+          mimeType: 'image/jpeg' // Default to JPEG if no MIME type is provided
+        }
+      };
     }
-  };
+  } catch (error) {
+    console.error('Error processing image:', error);
+    throw new Error('Failed to process image data. Please try a different image format (JPEG or PNG recommended).');
+  }
+};
+
+// Helper function to resize large images to reduce file size
+const resizeImageIfNeeded = async (base64Data: string, maxWidth = 1024, maxHeight = 1024): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Check if the data is a data URL
+      if (!base64Data.startsWith('data:')) {
+        return resolve(base64Data);
+      }
+      
+      // Create an image element to load the image
+      const img = new Image();
+      img.onload = () => {
+        // If the image is already small enough, return the original
+        if (img.width <= maxWidth && img.height <= maxHeight) {
+          return resolve(base64Data);
+        }
+        
+        // Calculate new dimensions while maintaining aspect ratio
+        let newWidth = img.width;
+        let newHeight = img.height;
+        
+        if (newWidth > maxWidth) {
+          newHeight = (newHeight * maxWidth) / newWidth;
+          newWidth = maxWidth;
+        }
+        
+        if (newHeight > maxHeight) {
+          newWidth = (newWidth * maxHeight) / newHeight;
+          newHeight = maxHeight;
+        }
+        
+        // Create a canvas to draw the resized image
+        const canvas = document.createElement('canvas');
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        
+        // Draw the image on the canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Failed to get canvas context'));
+        }
+        
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+        
+        // Get the MIME type from the original data URL
+        const mimeTypeMatch = base64Data.match(/^data:([^;]+);/);
+        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
+        
+        // Convert to the same format but resized
+        const resizedBase64 = canvas.toDataURL(mimeType, 0.9);
+        resolve(resizedBase64);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image for resizing'));
+      };
+      
+      // Set the source to the image
+      img.src = base64Data;
+    } catch (error) {
+      console.error('Error resizing image:', error);
+      resolve(base64Data); // Return original on error
+    }
+  });
 };
 
 /**
@@ -57,46 +200,91 @@ const base64ToImagePart = (base64Data: string): Part => {
  */
 export const identifyPlant = async (imageBase64: string): Promise<PlantIdentification> => {
   try {
+    // Resize large images to reduce file size
+    const resizedImageBase64 = await resizeImageIfNeeded(imageBase64);
+    
+    // Convert WebP to JPEG if needed
+    const processedImageBase64 = await convertWebPToJPEG(resizedImageBase64);
+    
     // Convert base64 image to a Part object
-    const imagePart = base64ToImagePart(imageBase64);
+    const imagePart = base64ToImagePart(processedImageBase64);
     
-    // Get the Gemini model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-    
-    // Create prompt for plant identification
+    // Create prompt for plant identification with more detailed instructions
     const prompt = `
-      Analyze this plant image and provide detailed identification information.
+      You are a professional botanist with expertise in plant identification. 
+      Analyze this plant image carefully and provide detailed identification information.
+      
+      Pay special attention to:
+      - Leaf shape, arrangement, and venation
+      - Stem structure and color
+      - Any visible flowers or fruits
+      - Overall growth habit and form
+      
+      Be particularly careful to distinguish between:
+      - Coffee plants (Coffea species) and Dracaena species
+      - Common houseplants that may look similar
+      - Young plants that may not have developed distinctive features yet
+      
+      If you're uncertain about the exact species, indicate this in your confidence level.
+      
       Respond with a JSON object that includes:
       {
         "name": "Common name of the plant",
         "scientificName": "Scientific name (genus and species)",
         "confidence": A number between 0-100 representing your confidence level,
-        "description": "A brief description of the plant, including its characteristics and origin",
+        "description": "A detailed description of the plant, including its characteristics and origin",
         "tags": ["Array", "of", "relevant", "tags", "like", "indoor", "flowering", "succulent", "etc"]
       }
       Only respond with the JSON object, nothing else.
     `;
     
-    // Generate content with the image
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    const text = response.text();
-    
-    // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse JSON response from Gemini API');
+    try {
+      // First try with the pro model
+      const proModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      const result = await proModel.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiIdentificationResponse;
+      
+      return {
+        name: jsonResponse.name || 'Unknown Plant',
+        scientificName: jsonResponse.scientificName || 'Species unknown',
+        confidence: jsonResponse.confidence || 0,
+        description: jsonResponse.description || 'No description available',
+        tags: jsonResponse.tags || [],
+      };
+    } catch (proModelError) {
+      console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Fallback to flash model if pro model fails
+      const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await flashModel.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiIdentificationResponse;
+      
+      return {
+        name: jsonResponse.name || 'Unknown Plant',
+        scientificName: jsonResponse.scientificName || 'Species unknown',
+        confidence: jsonResponse.confidence || 0,
+        description: jsonResponse.description || 'No description available',
+        tags: jsonResponse.tags || [],
+      };
     }
-    
-    const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiIdentificationResponse;
-    
-    return {
-      name: jsonResponse.name || 'Unknown Plant',
-      scientificName: jsonResponse.scientificName || 'Species unknown',
-      confidence: jsonResponse.confidence || 0,
-      description: jsonResponse.description || 'No description available',
-      tags: jsonResponse.tags || [],
-    };
   } catch (error) {
     console.error('Error identifying plant:', error);
     
@@ -118,25 +306,37 @@ export const identifyPlant = async (imageBase64: string): Promise<PlantIdentific
  */
 export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealth> => {
   try {
+    // Resize large images to reduce file size
+    const resizedImageBase64 = await resizeImageIfNeeded(imageBase64);
+    
+    // Convert WebP to JPEG if needed
+    const processedImageBase64 = await convertWebPToJPEG(resizedImageBase64);
+    
     // Convert base64 image to a Part object
-    const imagePart = base64ToImagePart(imageBase64);
+    const imagePart = base64ToImagePart(processedImageBase64);
     
-    // Get the Gemini model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-    
-    // Create prompt for plant health assessment
+    // Create prompt for plant health assessment with more detailed instructions
     const prompt = `
-      Analyze this plant image and provide a detailed health assessment.
+      You are a plant pathologist and horticultural expert. 
+      Analyze this plant image carefully and provide a detailed health assessment.
+      
+      Pay special attention to:
+      - Leaf color, spots, or discoloration
+      - Signs of pests or pest damage
+      - Growth patterns and overall vigor
+      - Stem and branch condition
+      - Soil condition (if visible)
+      
       Respond with a JSON object that includes:
       {
         "status": One of ["Healthy", "Needs attention", "Unhealthy"],
-        "summary": "A brief summary of the plant's overall health condition",
+        "summary": "A detailed summary of the plant's overall health condition",
         "issues": [
           {
             "name": "Name of the issue (e.g., 'Leaf yellowing')",
-            "description": "Detailed description of the issue",
+            "description": "Detailed description of the issue, including possible causes",
             "severity": One of ["low", "medium", "high"],
-            "solution": "Recommended solution to address this issue"
+            "solution": "Specific recommended solution to address this issue"
           }
         ]
       }
@@ -144,24 +344,49 @@ export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealt
       Only respond with the JSON object, nothing else.
     `;
     
-    // Generate content with the image
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    const text = response.text();
-    
-    // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse JSON response from Gemini API');
+    try {
+      // First try with the pro model
+      const proModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      const result = await proModel.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiHealthResponse;
+      
+      return {
+        status: jsonResponse.status || 'Needs attention',
+        summary: jsonResponse.summary || 'Unable to determine plant health status',
+        issues: jsonResponse.issues || [],
+      };
+    } catch (proModelError) {
+      console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Fallback to flash model if pro model fails
+      const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await flashModel.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiHealthResponse;
+      
+      return {
+        status: jsonResponse.status || 'Needs attention',
+        summary: jsonResponse.summary || 'Unable to determine plant health status',
+        issues: jsonResponse.issues || [],
+      };
     }
-    
-    const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiHealthResponse;
-    
-    return {
-      status: jsonResponse.status || 'Needs attention',
-      summary: jsonResponse.summary || 'Unable to determine plant health status',
-      issues: jsonResponse.issues || [],
-    };
   } catch (error) {
     console.error('Error assessing plant health:', error);
     
@@ -192,12 +417,20 @@ export const getPlantCareRecommendations = async (
   scientificName: string
 ): Promise<PlantCare> => {
   try {
-    // Get the Gemini model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-    
-    // Create prompt for plant care recommendations
+    // Create prompt for plant care recommendations with more detailed instructions
     const prompt = `
-      Provide detailed care recommendations for ${plantName}${scientificName ? ` (${scientificName})` : ''}.
+      You are a professional horticulturist with expertise in plant care.
+      Provide detailed and specific care recommendations for ${plantName}${scientificName ? ` (${scientificName})` : ''}.
+      
+      Include information about:
+      - Specific watering needs (frequency, amount, seasonal adjustments)
+      - Precise light requirements (intensity, duration, placement)
+      - Soil composition and drainage requirements
+      - Temperature range and humidity preferences
+      - Fertilization schedule and type
+      - Common issues to watch for and how to prevent them
+      - Pruning and maintenance tips
+      
       Respond with a JSON object that includes:
       {
         "watering": "Detailed watering instructions, including frequency and amount",
@@ -205,34 +438,63 @@ export const getPlantCareRecommendations = async (
         "soil": "Soil type and composition recommendations",
         "temperature": "Ideal temperature range and humidity conditions",
         "additionalTips": "Any additional care tips or special considerations",
-        "summary": "A brief summary of the care guide",
-        "humidity": "Recommended humidity levels"
+        "summary": "A comprehensive summary of the care guide",
+        "humidity": "Recommended humidity levels and how to maintain them"
       }
       Only respond with the JSON object, nothing else.
     `;
     
-    // Generate content
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse JSON response from Gemini API');
+    try {
+      // First try with the pro model
+      const proModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      const result = await proModel.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiCareResponse;
+      
+      return {
+        watering: jsonResponse.watering || 'Water when the top inch of soil feels dry.',
+        light: jsonResponse.light || 'Provide bright, indirect light.',
+        soil: jsonResponse.soil || 'Use well-draining potting mix.',
+        temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
+        additionalTips: jsonResponse.additionalTips,
+        summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
+        humidity: jsonResponse.humidity || 'Average humidity levels recommended',
+      };
+    } catch (proModelError) {
+      console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Fallback to flash model if pro model fails
+      const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await flashModel.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Parse the JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+      
+      const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiCareResponse;
+      
+      return {
+        watering: jsonResponse.watering || 'Water when the top inch of soil feels dry.',
+        light: jsonResponse.light || 'Provide bright, indirect light.',
+        soil: jsonResponse.soil || 'Use well-draining potting mix.',
+        temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
+        additionalTips: jsonResponse.additionalTips,
+        summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
+        humidity: jsonResponse.humidity || 'Average humidity levels recommended',
+      };
     }
-    
-    const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiCareResponse;
-    
-    return {
-      watering: jsonResponse.watering || 'Water when the top inch of soil feels dry.',
-      light: jsonResponse.light || 'Provide bright, indirect light.',
-      soil: jsonResponse.soil || 'Use well-draining potting mix.',
-      temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
-      additionalTips: jsonResponse.additionalTips,
-      summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
-      humidity: jsonResponse.humidity || 'Average humidity levels recommended',
-    };
   } catch (error) {
     console.error('Error getting plant care recommendations:', error);
     
