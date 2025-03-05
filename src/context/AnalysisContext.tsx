@@ -11,6 +11,9 @@ interface AnalysisContextType {
   analyzeImage: (imageUrl: string, plantId?: string) => Promise<AnalysisResult | undefined>;
   getAnalysisHistory: (plantId: string) => AnalysisResult[];
   clearCurrentAnalysis: () => void;
+  currentImage: string | null;
+  setImage: (imageUrl: string | null) => void;
+  analyzeCurrentImage: () => Promise<AnalysisResult | undefined>;
 }
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
 
   // Load analysis results from localStorage
   React.useEffect(() => {
@@ -37,6 +41,10 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
   React.useEffect(() => {
     localStorage.setItem('analysisResults', JSON.stringify(analysisResults));
   }, [analysisResults]);
+
+  const setImage = (imageUrl: string | null) => {
+    setCurrentImage(imageUrl);
+  };
 
   const analyzeImage = async (imageUrl: string, plantId?: string) => {
     try {
@@ -75,6 +83,14 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
     }
   };
 
+  const analyzeCurrentImage = async () => {
+    if (!currentImage) {
+      setError('No image to analyze');
+      return undefined;
+    }
+    return analyzeImage(currentImage);
+  };
+
   const getAnalysisHistory = (plantId: string) => {
     return analysisResults.filter(result => result.plantId === plantId);
   };
@@ -92,7 +108,10 @@ export const AnalysisProvider: React.FC<AnalysisProviderProps> = ({ children }) 
         error,
         analyzeImage,
         getAnalysisHistory,
-        clearCurrentAnalysis
+        clearCurrentAnalysis,
+        currentImage,
+        setImage,
+        analyzeCurrentImage
       }}
     >
       {children}

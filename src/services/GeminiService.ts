@@ -189,7 +189,7 @@ export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealt
  */
 export const getPlantCareRecommendations = async (
   plantName: string,
-  scientificName?: string
+  scientificName: string
 ): Promise<PlantCare> => {
   try {
     // Get the Gemini model
@@ -204,7 +204,9 @@ export const getPlantCareRecommendations = async (
         "light": "Light requirements and placement recommendations",
         "soil": "Soil type and composition recommendations",
         "temperature": "Ideal temperature range and humidity conditions",
-        "additionalTips": "Any additional care tips or special considerations"
+        "additionalTips": "Any additional care tips or special considerations",
+        "summary": "A brief summary of the care guide",
+        "humidity": "Recommended humidity levels"
       }
       Only respond with the JSON object, nothing else.
     `;
@@ -228,6 +230,8 @@ export const getPlantCareRecommendations = async (
       soil: jsonResponse.soil || 'Use well-draining potting mix.',
       temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
       additionalTips: jsonResponse.additionalTips,
+      summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
+      humidity: jsonResponse.humidity || 'Average humidity levels recommended',
     };
   } catch (error) {
     console.error('Error getting plant care recommendations:', error);
@@ -238,7 +242,9 @@ export const getPlantCareRecommendations = async (
       light: 'Provide bright, indirect light.',
       soil: 'Use well-draining potting mix.',
       temperature: 'Keep in normal room temperature (65-75°F/18-24°C).',
-      additionalTips: 'Research specific care requirements for this plant species.',
+      additionalTips: 'Regularly check for pests and diseases.',
+      summary: `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
+      humidity: 'Average humidity levels recommended',
     };
   }
 }; 

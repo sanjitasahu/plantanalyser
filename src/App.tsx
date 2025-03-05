@@ -18,6 +18,7 @@ import PlantDetail from './pages/PlantDetail';
 import AddPlant from './pages/AddPlant';
 import CameraView from './pages/CameraView';
 import AnalysisView from './pages/AnalysisView';
+import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import GeminiDemo from './pages/GeminiDemo';
 
@@ -123,6 +124,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/analyze" element={
         <ProtectedRoute>
           <AnalysisView />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       } />
       

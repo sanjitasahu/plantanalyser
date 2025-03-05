@@ -59,6 +59,8 @@ export interface PlantCare {
   soil: string;
   temperature: string;
   additionalTips?: string;
+  summary: string;
+  humidity?: string;
 }
 
 // Analysis Result type
@@ -146,4 +148,6 @@ export interface GeminiCareResponse {
   soil: string;
   temperature: string;
   additionalTips?: string;
+  summary?: string;
+  humidity?: string;
 } 
