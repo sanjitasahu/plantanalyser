@@ -36,15 +36,9 @@ import { useAnalysis } from '../../context/AnalysisContext';
 import Camera from '../camera/Camera';
 
 // Styled component for the expandable section
-const ExpandMore = styled((props: {
-  expand: boolean;
-  onClick: () => void;
-  'aria-expanded': boolean;
-  'aria-label': string;
-}) => {
-  const { expand, ...other } = props;
-  return <IconButton {...other} />;
-})(({ theme, expand }) => ({
+const ExpandMoreButton = styled(IconButton, {
+  shouldForwardProp: (prop) => prop !== 'expand',
+})<{ expand: boolean }>(({ theme, expand }) => ({
   transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
   marginLeft: 'auto',
   transition: theme.transitions.create('transform', {
@@ -336,14 +330,14 @@ const PlantDiagnosis: React.FC = () => {
                       <Typography variant="h6">
                         Home Remedy
                       </Typography>
-                      <ExpandMore
+                      <ExpandMoreButton
                         expand={expandHomeRemedy}
                         onClick={() => setExpandHomeRemedy(!expandHomeRemedy)}
                         aria-expanded={expandHomeRemedy}
                         aria-label="show more"
                       >
                         <ExpandMoreIcon />
-                      </ExpandMore>
+                      </ExpandMoreButton>
                     </Box>
                     
                     <Typography variant="body2" sx={{ mt: 1 }}>
@@ -368,14 +362,14 @@ const PlantDiagnosis: React.FC = () => {
                       <Typography variant="h6">
                         Overall Care
                       </Typography>
-                      <ExpandMore
+                      <ExpandMoreButton
                         expand={expandOverallRemedy}
                         onClick={() => setExpandOverallRemedy(!expandOverallRemedy)}
                         aria-expanded={expandOverallRemedy}
                         aria-label="show more"
                       >
                         <ExpandMoreIcon />
-                      </ExpandMore>
+                      </ExpandMoreButton>
                     </Box>
                     
                     <Typography variant="body2" sx={{ mt: 1 }}>
