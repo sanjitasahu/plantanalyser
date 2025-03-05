@@ -30,21 +30,25 @@ import {
   Home as HomeIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
 import { useCamera } from '../../context/CameraContext';
 import { useAnalysis } from '../../context/AnalysisContext';
 import Camera from '../camera/Camera';
 
-// Styled component for the expandable section
-const ExpandMoreButton = styled(IconButton, {
-  shouldForwardProp: (prop) => prop !== 'expand',
-})<{ expand: boolean }>(({ theme, expand }) => ({
-  transform: !expand ? 'rotate(0deg)' : 'rotate(180deg)',
-  marginLeft: 'auto',
-  transition: theme.transitions.create('transform', {
-    duration: theme.transitions.duration.shortest,
-  }),
-}));
+// Custom expand button component
+const ExpandButton = ({ expanded, onClick }: { expanded: boolean; onClick: () => void }) => (
+  <IconButton
+    onClick={onClick}
+    aria-expanded={expanded}
+    aria-label="show more"
+    sx={{
+      transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+      marginLeft: 'auto',
+      transition: 'transform 0.15s ease-in-out',
+    }}
+  >
+    <ExpandMoreIcon />
+  </IconButton>
+);
 
 const PlantDiagnosis: React.FC = () => {
   // State for UI controls
@@ -330,14 +334,10 @@ const PlantDiagnosis: React.FC = () => {
                       <Typography variant="h6">
                         Home Remedy
                       </Typography>
-                      <ExpandMoreButton
-                        expand={expandHomeRemedy}
+                      <ExpandButton 
+                        expanded={expandHomeRemedy}
                         onClick={() => setExpandHomeRemedy(!expandHomeRemedy)}
-                        aria-expanded={expandHomeRemedy}
-                        aria-label="show more"
-                      >
-                        <ExpandMoreIcon />
-                      </ExpandMoreButton>
+                      />
                     </Box>
                     
                     <Typography variant="body2" sx={{ mt: 1 }}>
@@ -362,14 +362,10 @@ const PlantDiagnosis: React.FC = () => {
                       <Typography variant="h6">
                         Overall Care
                       </Typography>
-                      <ExpandMoreButton
-                        expand={expandOverallRemedy}
+                      <ExpandButton 
+                        expanded={expandOverallRemedy}
                         onClick={() => setExpandOverallRemedy(!expandOverallRemedy)}
-                        aria-expanded={expandOverallRemedy}
-                        aria-label="show more"
-                      >
-                        <ExpandMoreIcon />
-                      </ExpandMoreButton>
+                      />
                     </Box>
                     
                     <Typography variant="body2" sx={{ mt: 1 }}>
