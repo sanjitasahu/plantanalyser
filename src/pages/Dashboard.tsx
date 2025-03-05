@@ -121,7 +121,7 @@ const Dashboard: React.FC = () => {
             <Grid item xs={3} sm={3}>
               <Box 
                 component={Link} 
-                to="/analyze"
+                to="/diagnose"
                 sx={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
