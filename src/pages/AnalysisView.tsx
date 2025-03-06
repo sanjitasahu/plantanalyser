@@ -48,7 +48,7 @@ import { usePlants } from '../context/PlantContext';
 
 const AnalysisView: React.FC = () => {
   const navigate = useNavigate();
-  const { currentImage, currentAnalysis, isAnalyzing, analyzeCurrentImage } = useAnalysis();
+  const { currentImage, currentAnalysis, isAnalyzing, analyzeCurrentImage, clearCurrentAnalysis } = useAnalysis();
   const { addPlant, updatePlant } = usePlants();
   
   const [activeStep, setActiveStep] = useState(0);
@@ -150,6 +150,12 @@ const AnalysisView: React.FC = () => {
     }
   };
 
+  // Handle back button click
+  const handleBackClick = () => {
+    clearCurrentAnalysis(); // Clear analysis data when navigating away
+    navigate(-1);
+  };
+
   return (
     <Box sx={{ pb: 8 }}>
       {/* Top App Bar */}
@@ -158,7 +164,7 @@ const AnalysisView: React.FC = () => {
           <IconButton
             edge="start"
             color="inherit"
-            onClick={() => navigate(-1)}
+            onClick={handleBackClick}
             sx={{ color: 'white' }}
           >
             <ArrowBackIcon />

@@ -45,6 +45,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { usePlants } from '../context/PlantContext';
 import { useAuth } from '../context/AuthContext';
+import { useAnalysis } from '../context/AnalysisContext';
 
 // Sample book data
 const books = [
@@ -68,9 +69,16 @@ const books = [
 const Dashboard: React.FC = () => {
   const { plants } = usePlants();
   const { user } = useAuth();
+  const { clearCurrentAnalysis } = useAnalysis();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+
+  // Function to handle navigation to camera/analyze
+  const handleNavigateToAnalyze = () => {
+    clearCurrentAnalysis(); // Clear any previous analysis data
+    navigate('/camera');
+  };
 
   return (
     <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh', pb: 8 }}>
@@ -120,14 +128,15 @@ const Dashboard: React.FC = () => {
           <Grid container spacing={2}>
             <Grid item xs={3} sm={3}>
               <Box 
-                component={Link} 
-                to="/diagnose"
+                component="div"
+                onClick={handleNavigateToAnalyze}
                 sx={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center',
                   textDecoration: 'none',
-                  color: 'inherit'
+                  color: 'inherit',
+                  cursor: 'pointer'
                 }}
               >
                 <Avatar sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', mb: 1 }}>
@@ -418,7 +427,7 @@ const Dashboard: React.FC = () => {
           <BottomNavigationAction 
             label="Analyze" 
             icon={<CameraIcon />} 
-            onClick={() => navigate('/camera')}
+            onClick={handleNavigateToAnalyze}
           />
           <BottomNavigationAction 
             label="Settings" 

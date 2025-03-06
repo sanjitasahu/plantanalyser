@@ -39,7 +39,7 @@ const Transition = React.forwardRef(function Transition(
 
 const CameraView: React.FC = () => {
   const navigate = useNavigate();
-  const { setImage } = useAnalysis();
+  const { setImage, clearCurrentAnalysis } = useAnalysis();
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -154,21 +154,27 @@ const CameraView: React.FC = () => {
     setPreviewDialogOpen(false);
   };
 
+  // Handle back button click
+  const handleBackClick = () => {
+    clearCurrentAnalysis(); // Clear analysis data when navigating away
+    navigate(-1);
+  };
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#000' }}>
       {/* Top App Bar */}
-      <AppBar position="static" color="transparent" elevation={0} sx={{ bgcolor: 'transparent' }}>
+      <AppBar position="static" color="transparent" elevation={0} sx={{ bgcolor: '#4CAF50' }}>
         <Toolbar>
           <IconButton
             edge="start"
             color="inherit"
-            onClick={() => navigate(-1)}
+            onClick={handleBackClick}
             sx={{ color: 'white' }}
           >
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'white', fontWeight: 'bold' }}>
-            Take a Photo
+            Camera
           </Typography>
         </Toolbar>
       </AppBar>

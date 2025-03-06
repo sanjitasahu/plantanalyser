@@ -87,7 +87,7 @@ const PlantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { plants, updatePlant, deletePlant } = usePlants();
-  const { analyzeImage } = useAnalysis();
+  const { analyzeImage, clearCurrentAnalysis } = useAnalysis();
   
   const [plant, setPlant] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -187,6 +187,11 @@ const PlantDetail: React.FC = () => {
         } 
       });
     }
+  };
+
+  const handleNavigateToAnalyze = () => {
+    clearCurrentAnalysis(); // Clear any previous analysis data
+    navigate('/camera');
   };
 
   const formatDate = (dateString: string) => {
@@ -729,7 +734,7 @@ const PlantDetail: React.FC = () => {
           <BottomNavigationAction 
             label="Analyze" 
             icon={<CameraAltIcon />} 
-            onClick={() => navigate('/camera')}
+            onClick={handleNavigateToAnalyze}
           />
           <BottomNavigationAction 
             label="Settings" 

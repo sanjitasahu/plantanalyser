@@ -47,10 +47,12 @@ import {
 } from '@mui/icons-material';
 
 import { usePlants } from '../context/PlantContext';
+import { useAnalysis } from '../context/AnalysisContext';
 
 const PlantList: React.FC = () => {
   const navigate = useNavigate();
   const { plants, deletePlant, updatePlant } = usePlants();
+  const { clearCurrentAnalysis } = useAnalysis();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPlants, setFilteredPlants] = useState(plants);
@@ -185,6 +187,12 @@ const PlantList: React.FC = () => {
       default:
         return null;
     }
+  };
+
+  // Function to handle navigation to camera/analyze
+  const handleNavigateToAnalyze = () => {
+    clearCurrentAnalysis(); // Clear any previous analysis data
+    navigate('/camera');
   };
 
   return (
@@ -570,7 +578,7 @@ const PlantList: React.FC = () => {
           <BottomNavigationAction 
             label="Analyze" 
             icon={<CameraAltIcon />} 
-            onClick={() => navigate('/camera')}
+            onClick={handleNavigateToAnalyze}
           />
           <BottomNavigationAction 
             label="Settings" 
