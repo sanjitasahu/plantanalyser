@@ -28,11 +28,8 @@ import {
   Search as SearchIcon, 
   Add as AddIcon,
   SmartToy as AIIcon,
-  MenuBook as BookIcon,
   Spa as DiagnoseIcon,
-  ViewInAr as IdentifyIcon,
   Forum as ExpertsIcon,
-  Workspaces as PremiumIcon,
   Yard as GardenIcon,
   NotificationsActive as RemindersIcon,
   ChevronRight as ChevronRightIcon,
@@ -47,24 +44,7 @@ import { usePlants } from '../context/PlantContext';
 import { useAuth } from '../context/AuthContext';
 import { useAnalysis } from '../context/AnalysisContext';
 
-// Sample book data
-const books = [
-  {
-    id: 1,
-    title: 'Flower of the Week',
-    image: 'https://images.unsplash.com/photo-1589994160839-163cd867cfe8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHllbGxvdyUyMHR1bGlwfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60',
-  },
-  {
-    id: 2,
-    title: 'A Complete Guide to Gardening',
-    image: 'https://images.unsplash.com/photo-1558429498-b67f75df4cf5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cm9zZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
-  },
-  {
-    id: 3,
-    title: 'A Full Guide to Popular House Plants',
-    image: 'https://images.unsplash.com/photo-1463320898484-cdee8141c787?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG91c2UlMjBwbGFudHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60',
-  },
-];
+// Removed books data
 
 const Dashboard: React.FC = () => {
   const { plants } = usePlants();
@@ -99,76 +79,100 @@ const Dashboard: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg">
-        {/* Search Bar */}
+      <Container maxWidth="sm" sx={{ py: 2 }}>
+        {/* Welcome Section */}
         <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            placeholder="Search plants"
-            variant="outlined"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              sx: { 
-                bgcolor: 'white', 
-                borderRadius: 28,
-                '& fieldset': { 
-                  borderRadius: 28,
-                },
-              }
-            }}
-          />
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Hello, {user?.name || 'Plant Lover'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            What would you like to do today?
+          </Typography>
         </Box>
 
+        {/* Search Bar */}
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 1, 
+            mb: 3, 
+            display: 'flex', 
+            alignItems: 'center',
+            borderRadius: 2,
+            border: '1px solid #e0e0e0'
+          }}
+        >
+          <InputAdornment position="start" sx={{ pl: 1 }}>
+            <SearchIcon color="action" />
+          </InputAdornment>
+          <TextField
+            fullWidth
+            placeholder="Search plants..."
+            variant="standard"
+            InputProps={{
+              disableUnderline: true,
+            }}
+          />
+        </Paper>
+
         {/* Quick Actions */}
-        <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Quick Actions
+          </Typography>
+          
           <Grid container spacing={2}>
-            <Grid item xs={3} sm={3}>
-              <Box 
-                component="div"
-                onClick={handleNavigateToAnalyze}
+            <Grid item xs={6}>
+              <Card 
                 sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer'
+                  borderRadius: 2, 
+                  bgcolor: '#E8F5E9', 
+                  height: '100%',
+                  boxShadow: 'none'
                 }}
               >
-                <Avatar sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', mb: 1 }}>
-                  <DiagnoseIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">Diagnose</Typography>
-              </Box>
+                <CardActionArea 
+                  sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  onClick={handleNavigateToAnalyze}
+                >
+                  <CameraIcon sx={{ fontSize: 40, color: '#4CAF50', mb: 1 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'medium', textAlign: 'center' }}>
+                    Identify Plant
+                  </Typography>
+                </CardActionArea>
+              </Card>
             </Grid>
             
-            <Grid item xs={3} sm={3}>
+            <Grid item xs={6}>
+              <Card 
+                sx={{ 
+                  borderRadius: 2, 
+                  bgcolor: '#E3F2FD', 
+                  height: '100%',
+                  boxShadow: 'none'
+                }}
+              >
+                <CardActionArea 
+                  sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  onClick={() => navigate('/plants')}
+                >
+                  <PlantIcon sx={{ fontSize: 40, color: '#2196F3', mb: 1 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'medium', textAlign: 'center' }}>
+                    My Garden
+                  </Typography>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Features */}
+        <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+          <Grid container spacing={2} justifyContent="center">
+            <Grid item xs={4} sm={4}>
               <Box 
                 component={Link} 
                 to="/camera"
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Avatar sx={{ bgcolor: '#E3F2FD', color: '#2196F3', mb: 1 }}>
-                  <IdentifyIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">Identify</Typography>
-              </Box>
-            </Grid>
-            
-            <Grid item xs={3} sm={3}>
-              <Box 
-                component={Link} 
-                to="/gemini-demo"
                 sx={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -184,83 +188,7 @@ const Dashboard: React.FC = () => {
               </Box>
             </Grid>
             
-            <Grid item xs={3} sm={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Avatar sx={{ bgcolor: '#FFF8E1', color: '#FFC107', mb: 1 }}>
-                  <PremiumIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">Premium</Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }} />
-
-          <Grid container spacing={2}>
-            <Grid item xs={3} sm={3}>
-              <Box 
-                component={Link} 
-                to="/plants"
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Avatar sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', mb: 1 }}>
-                  <GardenIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">My Garden</Typography>
-              </Box>
-            </Grid>
-            
-            <Grid item xs={3} sm={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Avatar sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', mb: 1 }}>
-                  <BookIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">Books</Typography>
-              </Box>
-            </Grid>
-            
-            <Grid item xs={3} sm={3}>
-              <Box 
-                component={Link} 
-                to="/camera"
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Avatar sx={{ bgcolor: '#E8F5E9', color: '#4CAF50', mb: 1 }}>
-                  <IdentifyIcon />
-                </Avatar>
-                <Typography variant="caption" align="center">360 Identify</Typography>
-              </Box>
-            </Grid>
-            
-            <Grid item xs={3} sm={3}>
+            <Grid item xs={4} sm={4}>
               <Box 
                 sx={{ 
                   display: 'flex', 
@@ -278,49 +206,6 @@ const Dashboard: React.FC = () => {
             </Grid>
           </Grid>
         </Paper>
-
-        {/* Hot Books Section */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-              Hot Books
-            </Typography>
-            <Box 
-              component={Link} 
-              to="/books"
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                textDecoration: 'none',
-                color: '#4CAF50'
-              }}
-            >
-              <Typography variant="body2">More</Typography>
-              <ChevronRightIcon fontSize="small" />
-            </Box>
-          </Box>
-          
-          <Grid container spacing={2}>
-            {books.map((book) => (
-              <Grid item xs={4} key={book.id}>
-                <Card sx={{ height: '100%', boxShadow: 'none', borderRadius: 2 }}>
-                  <CardActionArea>
-                    <CardMedia
-                      component="img"
-                      height={120}
-                      image={book.image}
-                      alt={book.title}
-                      sx={{ borderRadius: 2 }}
-                    />
-                    <Typography variant="caption" sx={{ mt: 1, display: 'block', fontSize: '0.7rem' }}>
-                      {book.title}
-                    </Typography>
-                  </CardActionArea>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
 
         {/* Get Started Section */}
         <Box sx={{ mb: 3 }}>
@@ -348,7 +233,7 @@ const Dashboard: React.FC = () => {
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                Your Plants
+                My Plants
               </Typography>
               <Box 
                 component={Link} 
@@ -366,25 +251,30 @@ const Dashboard: React.FC = () => {
             </Box>
             
             <Grid container spacing={2}>
-              {plants.slice(0, 4).map((plant) => (
-                <Grid item xs={6} sm={3} key={plant.id}>
-                  <Card sx={{ height: '100%', borderRadius: 2 }}>
-                    <CardActionArea component={Link} to={`/plants/${plant.id}`}>
+              {plants.slice(0, 3).map((plant) => (
+                <Grid item xs={4} key={plant.id}>
+                  <Card 
+                    sx={{ 
+                      height: '100%', 
+                      boxShadow: 'none', 
+                      borderRadius: 2,
+                      border: '1px solid #e0e0e0'
+                    }}
+                  >
+                    <CardActionArea 
+                      sx={{ height: '100%' }}
+                      onClick={() => navigate(`/plants/${plant.id}`)}
+                    >
                       <CardMedia
                         component="img"
-                        height={120}
-                        image={plant.images.length > 0 ? plant.images[0] : 'https://via.placeholder.com/400x300?text=No+Image'}
+                        height={100}
+                        image={plant.imageUrl || plant.images[0] || 'https://via.placeholder.com/100x100?text=Plant'}
                         alt={plant.name}
                       />
-                      <CardContent sx={{ p: 1.5 }}>
-                        <Typography variant="subtitle2" noWrap>
+                      <CardContent sx={{ p: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
                           {plant.name}
                         </Typography>
-                        {plant.species && (
-                          <Typography variant="caption" color="text.secondary" display="block" noWrap>
-                            {plant.species}
-                          </Typography>
-                        )}
                       </CardContent>
                     </CardActionArea>
                   </Card>
@@ -396,43 +286,33 @@ const Dashboard: React.FC = () => {
       </Container>
 
       {/* Bottom Navigation */}
-      <Paper
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
+      <Paper 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
           right: 0,
-          zIndex: 1000,
-          borderRadius: 0,
-          boxShadow: '0px -2px 10px rgba(0,0,0,0.05)'
-        }}
+          zIndex: 1000
+        }} 
         elevation={3}
       >
         <BottomNavigation showLabels>
           <BottomNavigationAction 
             label="Home" 
             icon={<HomeIcon />} 
-            onClick={() => navigate('/')}
+            component={Link}
+            to="/"
           />
           <BottomNavigationAction 
             label="My Plants" 
             icon={<LocalFloristIcon />} 
-            onClick={() => navigate('/plants')}
+            component={Link}
+            to="/plants"
           />
           <BottomNavigationAction 
-            label="Add Plant" 
-            icon={<AddCircleIcon />} 
-            onClick={() => navigate('/add-plant')}
-          />
-          <BottomNavigationAction 
-            label="Analyze" 
-            icon={<CameraIcon />} 
+            label="Add" 
+            icon={<AddCircleIcon color="primary" sx={{ fontSize: 32 }} />} 
             onClick={handleNavigateToAnalyze}
-          />
-          <BottomNavigationAction 
-            label="Settings" 
-            icon={<SettingsIcon />} 
-            onClick={() => navigate('/settings')}
           />
         </BottomNavigation>
       </Paper>
