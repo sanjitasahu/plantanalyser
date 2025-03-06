@@ -419,7 +419,7 @@ export const getPlantCareRecommendations = async (
   try {
     // Create prompt for plant care recommendations with more detailed instructions
     const prompt = `
-      You are a professional horticulturist with expertise in plant care.
+      You are a professional horticulturist with expertise in plant care and cultural knowledge.
       Provide detailed and specific care recommendations for ${plantName}${scientificName ? ` (${scientificName})` : ''}.
       
       Include information about:
@@ -430,6 +430,9 @@ export const getPlantCareRecommendations = async (
       - Fertilization schedule and type
       - Common issues to watch for and how to prevent them
       - Pruning and maintenance tips
+      - Home remedies for healthy growth
+      - Cultural significance in ancient Hindu and Chinese traditions
+      - Recommended placement direction according to Vastu/Feng Shui principles
       
       Respond with a JSON object that includes:
       {
@@ -439,7 +442,9 @@ export const getPlantCareRecommendations = async (
         "temperature": "Ideal temperature range and humidity conditions",
         "additionalTips": "Any additional care tips or special considerations",
         "summary": "A comprehensive summary of the care guide",
-        "humidity": "Recommended humidity levels and how to maintain them"
+        "humidity": "Recommended humidity levels and how to maintain them",
+        "homeRemedies": "Natural home remedies to promote healthy growth of the plant",
+        "culturalSignificance": "Cultural significance in ancient Hindu and Chinese traditions, including recommended placement direction according to Vastu/Feng Shui principles"
       }
       Only respond with the JSON object, nothing else.
     `;
@@ -467,6 +472,8 @@ export const getPlantCareRecommendations = async (
         additionalTips: jsonResponse.additionalTips,
         summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
         humidity: jsonResponse.humidity || 'Average humidity levels recommended',
+        homeRemedies: jsonResponse.homeRemedies || 'No specific home remedies information available.',
+        culturalSignificance: jsonResponse.culturalSignificance || 'No specific cultural significance information available.'
       };
     } catch (proModelError) {
       console.warn('Pro model failed, falling back to flash model:', proModelError);
@@ -493,6 +500,8 @@ export const getPlantCareRecommendations = async (
         additionalTips: jsonResponse.additionalTips,
         summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
         humidity: jsonResponse.humidity || 'Average humidity levels recommended',
+        homeRemedies: jsonResponse.homeRemedies || 'No specific home remedies information available.',
+        culturalSignificance: jsonResponse.culturalSignificance || 'No specific cultural significance information available.'
       };
     }
   } catch (error) {
@@ -507,6 +516,8 @@ export const getPlantCareRecommendations = async (
       additionalTips: 'Regularly check for pests and diseases.',
       summary: `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
       humidity: 'Average humidity levels recommended',
+      homeRemedies: 'No specific home remedies information available.',
+      culturalSignificance: 'No specific cultural significance information available.'
     };
   }
 }; 

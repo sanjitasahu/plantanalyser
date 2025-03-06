@@ -61,6 +61,8 @@ export interface PlantCare {
   additionalTips?: string;
   summary: string;
   humidity?: string;
+  homeRemedies?: string;
+  culturalSignificance?: string;
 }
 
 // Analysis Result type
@@ -150,4 +152,6 @@ export interface GeminiCareResponse {
   additionalTips?: string;
   summary?: string;
   humidity?: string;
+  homeRemedies?: string;
+  culturalSignificance?: string;
 } 

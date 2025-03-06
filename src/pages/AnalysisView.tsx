@@ -40,7 +40,9 @@ import {
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
   Share as ShareIcon,
-  CameraAlt as CameraIcon
+  CameraAlt as CameraIcon,
+  Spa as EcoIcon,
+  Public as CultureIcon
 } from '@mui/icons-material';
 
 import { useAnalysis } from '../context/AnalysisContext';
@@ -438,6 +440,74 @@ const AnalysisView: React.FC = () => {
                       </Card>
                     </Grid>
                   </Grid>
+                </AccordionDetails>
+              </Accordion>
+            </Grid>
+
+            {/* Home Remedies */}
+            <Grid item xs={12}>
+              <Accordion 
+                defaultExpanded 
+                sx={{ 
+                  borderRadius: 2, 
+                  mb: 2,
+                  '&:before': { display: 'none' },
+                  boxShadow: 1
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ 
+                    bgcolor: '#E8F5E9',
+                    borderTopLeftRadius: 8,
+                    borderTopRightRadius: 8
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                    Home Remedies for Healthy Growth
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                    <EcoIcon color="success" sx={{ mr: 2, mt: 0.5 }} />
+                    <Typography variant="body1">
+                      {currentAnalysis.care.homeRemedies || 'No specific home remedies information available.'}
+                    </Typography>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+            </Grid>
+
+            {/* Cultural Significance */}
+            <Grid item xs={12}>
+              <Accordion 
+                defaultExpanded 
+                sx={{ 
+                  borderRadius: 2, 
+                  mb: 2,
+                  '&:before': { display: 'none' },
+                  boxShadow: 1
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ 
+                    bgcolor: '#FFF8E1',
+                    borderTopLeftRadius: 8,
+                    borderTopRightRadius: 8
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                    Cultural Significance
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                    <CultureIcon color="warning" sx={{ mr: 2, mt: 0.5 }} />
+                    <Typography variant="body1">
+                      {currentAnalysis.care.culturalSignificance || 'No specific cultural significance information available.'}
+                    </Typography>
+                  </Box>
                 </AccordionDetails>
               </Accordion>
             </Grid>
