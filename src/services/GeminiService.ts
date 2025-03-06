@@ -193,6 +193,40 @@ const resizeImageIfNeeded = async (base64Data: string, maxWidth = 1024, maxHeigh
   });
 };
 
+// Helper function to handle API errors with specific messages for quota limits
+const handleApiError = (error: any): string => {
+  console.error('API Error:', error);
+  
+  // Check for quota exceeded errors
+  if (error.message && (
+    error.message.includes('quota') || 
+    error.message.includes('limit') || 
+    error.message.includes('exceeded') ||
+    error.message.includes('RESOURCE_EXHAUSTED')
+  )) {
+    return 'API quota exceeded. Please try again later or contact support for assistance.';
+  }
+  
+  // Generic error message for other errors
+  return 'An error occurred while processing your request. Please try again.';
+};
+
+// Helper function to ensure values are strings
+const ensureString = (value: any, defaultValue: string = ''): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  try {
+    // Try to convert objects or arrays to JSON strings
+    return JSON.stringify(value);
+  } catch (e) {
+    return defaultValue;
+  }
+};
+
 /**
  * Identify a plant from an image using the Gemini API
  * @param imageBase64 Base64-encoded image data
@@ -260,8 +294,18 @@ export const identifyPlant = async (imageBase64: string): Promise<PlantIdentific
         description: jsonResponse.description || 'No description available',
         tags: jsonResponse.tags || [],
       };
-    } catch (proModelError) {
+    } catch (proModelError: any) {
       console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Check if this is a quota exceeded error
+      if (proModelError.message && (
+        proModelError.message.includes('quota') || 
+        proModelError.message.includes('limit') || 
+        proModelError.message.includes('exceeded') ||
+        proModelError.message.includes('RESOURCE_EXHAUSTED')
+      )) {
+        throw new Error('API quota exceeded. Please try again later or contact support for assistance.');
+      }
       
       // Fallback to flash model if pro model fails
       const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -285,8 +329,24 @@ export const identifyPlant = async (imageBase64: string): Promise<PlantIdentific
         tags: jsonResponse.tags || [],
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error identifying plant:', error);
+    
+    // Check for quota exceeded errors
+    if (error.message && (
+      error.message.includes('quota') || 
+      error.message.includes('limit') || 
+      error.message.includes('exceeded') ||
+      error.message.includes('RESOURCE_EXHAUSTED')
+    )) {
+      return {
+        name: 'API Quota Exceeded',
+        scientificName: 'Service Temporarily Unavailable',
+        confidence: 0,
+        description: 'The API quota has been exceeded. Please try again later or contact support for assistance.',
+        tags: ['error', 'quota'],
+      };
+    }
     
     // Return fallback data in case of error
     return {
@@ -300,9 +360,9 @@ export const identifyPlant = async (imageBase64: string): Promise<PlantIdentific
 };
 
 /**
- * Assess plant health from an image using the Gemini API
+ * Assess the health of a plant from an image using the Gemini API
  * @param imageBase64 Base64-encoded image data
- * @returns Plant health assessment
+ * @returns Plant health assessment information
  */
 export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealth> => {
   try {
@@ -315,32 +375,33 @@ export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealt
     // Convert base64 image to a Part object
     const imagePart = base64ToImagePart(processedImageBase64);
     
-    // Create prompt for plant health assessment with more detailed instructions
+    // Create prompt for plant health assessment
     const prompt = `
-      You are a plant pathologist and horticultural expert. 
+      You are a plant pathologist and expert gardener specializing in diagnosing plant health issues.
       Analyze this plant image carefully and provide a detailed health assessment.
       
       Pay special attention to:
-      - Leaf color, spots, or discoloration
+      - Leaf discoloration, spots, or abnormal patterns
       - Signs of pests or pest damage
-      - Growth patterns and overall vigor
       - Stem and branch condition
-      - Soil condition (if visible)
+      - Overall plant vigor and appearance
+      - Signs of nutrient deficiencies or excesses
       
       Respond with a JSON object that includes:
       {
-        "status": One of ["Healthy", "Needs attention", "Unhealthy"],
-        "summary": "A detailed summary of the plant's overall health condition",
+        "status": One of: "Healthy", "Needs attention", or "Unhealthy",
+        "summary": "A concise summary of the plant's overall health condition",
         "issues": [
           {
-            "name": "Name of the issue (e.g., 'Leaf yellowing')",
-            "description": "Detailed description of the issue, including possible causes",
-            "severity": One of ["low", "medium", "high"],
-            "solution": "Specific recommended solution to address this issue"
+            "name": "Name of the issue (e.g., 'Leaf Spot Disease', 'Spider Mite Infestation')",
+            "description": "Detailed description of the issue",
+            "severity": One of: "low", "medium", or "high",
+            "solution": "Recommended treatment or solution"
           }
         ]
       }
-      If the plant appears healthy with no issues, return an empty array for issues.
+      
+      If the plant appears completely healthy, return an empty array for issues.
       Only respond with the JSON object, nothing else.
     `;
     
@@ -361,11 +422,21 @@ export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealt
       
       return {
         status: jsonResponse.status || 'Needs attention',
-        summary: jsonResponse.summary || 'Unable to determine plant health status',
+        summary: jsonResponse.summary || 'Unable to determine plant health status with certainty.',
         issues: jsonResponse.issues || [],
       };
-    } catch (proModelError) {
+    } catch (proModelError: any) {
       console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Check if this is a quota exceeded error
+      if (proModelError.message && (
+        proModelError.message.includes('quota') || 
+        proModelError.message.includes('limit') || 
+        proModelError.message.includes('exceeded') ||
+        proModelError.message.includes('RESOURCE_EXHAUSTED')
+      )) {
+        throw new Error('API quota exceeded. Please try again later or contact support for assistance.');
+      }
       
       // Fallback to flash model if pro model fails
       const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -383,33 +454,50 @@ export const assessPlantHealth = async (imageBase64: string): Promise<PlantHealt
       
       return {
         status: jsonResponse.status || 'Needs attention',
-        summary: jsonResponse.summary || 'Unable to determine plant health status',
+        summary: jsonResponse.summary || 'Unable to determine plant health status with certainty.',
         issues: jsonResponse.issues || [],
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error assessing plant health:', error);
+    
+    // Check for quota exceeded errors
+    if (error.message && (
+      error.message.includes('quota') || 
+      error.message.includes('limit') || 
+      error.message.includes('exceeded') ||
+      error.message.includes('RESOURCE_EXHAUSTED')
+    )) {
+      return {
+        status: 'Needs attention',
+        summary: 'API Quota Exceeded: The service is temporarily unavailable. Please try again later or contact support for assistance.',
+        issues: [{
+          name: 'Service Limitation',
+          description: 'The API quota has been exceeded. This is a temporary issue.',
+          severity: 'medium',
+          solution: 'Please try again later when the quota resets or contact support for assistance.'
+        }],
+      };
+    }
     
     // Return fallback data in case of error
     return {
       status: 'Needs attention',
-      summary: 'There was an error analyzing this image. Please try again with a clearer image of the plant.',
-      issues: [
-        {
-          name: 'Analysis Error',
-          description: 'The system encountered an error while analyzing this plant.',
-          severity: 'medium',
-          solution: 'Try taking a clearer photo with good lighting, focusing on the plant\'s leaves and stems.',
-        },
-      ],
+      summary: 'Unable to assess plant health due to an error. Please try again with a clearer image.',
+      issues: [{
+        name: 'Analysis Error',
+        description: 'There was a problem analyzing this image.',
+        severity: 'medium',
+        solution: 'Try again with a clearer, well-lit image that shows the entire plant or the affected areas clearly.'
+      }],
     };
   }
 };
 
 /**
- * Get care recommendations for a plant using the Gemini API
+ * Get care recommendations for a plant based on its name and scientific name
  * @param plantName Common name of the plant
- * @param scientificName Scientific name of the plant (optional)
+ * @param scientificName Scientific name of the plant
  * @returns Plant care recommendations
  */
 export const getPlantCareRecommendations = async (
@@ -417,35 +505,29 @@ export const getPlantCareRecommendations = async (
   scientificName: string
 ): Promise<PlantCare> => {
   try {
-    // Create prompt for plant care recommendations with more detailed instructions
+    // Create prompt for plant care recommendations
     const prompt = `
-      You are a professional horticulturist with expertise in plant care and cultural knowledge.
-      Provide detailed and specific care recommendations for ${plantName}${scientificName ? ` (${scientificName})` : ''}.
+      You are a professional horticulturist with extensive knowledge of plant care requirements.
+      Provide detailed care recommendations for the following plant:
       
-      Include information about:
-      - Specific watering needs (frequency, amount, seasonal adjustments)
-      - Precise light requirements (intensity, duration, placement)
-      - Soil composition and drainage requirements
-      - Temperature range and humidity preferences
-      - Fertilization schedule and type
-      - Common issues to watch for and how to prevent them
-      - Pruning and maintenance tips
-      - Home remedies for healthy growth
-      - Cultural significance in ancient Hindu and Chinese traditions
-      - Recommended placement direction according to Vastu/Feng Shui principles
+      Common Name: ${plantName}
+      Scientific Name: ${scientificName}
+      
+      Include specific information about:
       
       Respond with a JSON object that includes:
       {
-        "watering": "Detailed watering instructions, including frequency and amount",
-        "light": "Light requirements and placement recommendations",
-        "soil": "Soil type and composition recommendations",
-        "temperature": "Ideal temperature range and humidity conditions",
-        "additionalTips": "Any additional care tips or special considerations",
-        "summary": "A comprehensive summary of the care guide",
-        "humidity": "Recommended humidity levels and how to maintain them",
-        "homeRemedies": "Natural home remedies to promote healthy growth of the plant",
-        "culturalSignificance": "Cultural significance in ancient Hindu and Chinese traditions, including recommended placement direction according to Vastu/Feng Shui principles"
+        "watering": "Detailed watering instructions including frequency and amount",
+        "light": "Light requirements (e.g., full sun, partial shade, etc.)",
+        "soil": "Soil type and pH preferences",
+        "temperature": "Ideal temperature range and tolerance",
+        "humidity": "Humidity requirements or preferences",
+        "additionalTips": "Any other important care information",
+        "summary": "A concise summary of the most important care requirements",
+        "homeRemedies": "Natural and DIY solutions to promote healthy growth of the plant",
+        "culturalSignificance": "Information about the plant's importance in ancient Hindu and Chinese traditions, including recommended placement directions according to Vastu/Feng Shui principles"
       }
+      
       Only respond with the JSON object, nothing else.
     `;
     
@@ -465,18 +547,28 @@ export const getPlantCareRecommendations = async (
       const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiCareResponse;
       
       return {
-        watering: jsonResponse.watering || 'Water when the top inch of soil feels dry.',
-        light: jsonResponse.light || 'Provide bright, indirect light.',
-        soil: jsonResponse.soil || 'Use well-draining potting mix.',
-        temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
-        additionalTips: jsonResponse.additionalTips,
-        summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
-        humidity: jsonResponse.humidity || 'Average humidity levels recommended',
-        homeRemedies: jsonResponse.homeRemedies || 'No specific home remedies information available.',
-        culturalSignificance: jsonResponse.culturalSignificance || 'No specific cultural significance information available.'
+        watering: ensureString(jsonResponse.watering, 'Water when the top inch of soil feels dry.'),
+        light: ensureString(jsonResponse.light, 'Moderate to bright indirect light.'),
+        soil: ensureString(jsonResponse.soil, 'Well-draining potting mix.'),
+        temperature: ensureString(jsonResponse.temperature, '65-80°F (18-27°C)'),
+        humidity: ensureString(jsonResponse.humidity, 'Moderate humidity is suitable for many plants.'),
+        additionalTips: ensureString(jsonResponse.additionalTips, 'Research specific care requirements for this plant species.'),
+        summary: ensureString(jsonResponse.summary, 'Provide moderate water, bright indirect light, and well-draining soil.'),
+        homeRemedies: ensureString(jsonResponse.homeRemedies, 'No specific home remedies information available.'),
+        culturalSignificance: ensureString(jsonResponse.culturalSignificance, 'No specific cultural significance information available.')
       };
-    } catch (proModelError) {
+    } catch (proModelError: any) {
       console.warn('Pro model failed, falling back to flash model:', proModelError);
+      
+      // Check if this is a quota exceeded error
+      if (proModelError.message && (
+        proModelError.message.includes('quota') || 
+        proModelError.message.includes('limit') || 
+        proModelError.message.includes('exceeded') ||
+        proModelError.message.includes('RESOURCE_EXHAUSTED')
+      )) {
+        throw new Error('API quota exceeded. Please try again later or contact support for assistance.');
+      }
       
       // Fallback to flash model if pro model fails
       const flashModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
@@ -493,31 +585,51 @@ export const getPlantCareRecommendations = async (
       const jsonResponse = JSON.parse(jsonMatch[0]) as GeminiCareResponse;
       
       return {
-        watering: jsonResponse.watering || 'Water when the top inch of soil feels dry.',
-        light: jsonResponse.light || 'Provide bright, indirect light.',
-        soil: jsonResponse.soil || 'Use well-draining potting mix.',
-        temperature: jsonResponse.temperature || 'Keep in normal room temperature (65-75°F/18-24°C).',
-        additionalTips: jsonResponse.additionalTips,
-        summary: jsonResponse.summary || `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
-        humidity: jsonResponse.humidity || 'Average humidity levels recommended',
-        homeRemedies: jsonResponse.homeRemedies || 'No specific home remedies information available.',
-        culturalSignificance: jsonResponse.culturalSignificance || 'No specific cultural significance information available.'
+        watering: ensureString(jsonResponse.watering, 'Water when the top inch of soil feels dry.'),
+        light: ensureString(jsonResponse.light, 'Moderate to bright indirect light.'),
+        soil: ensureString(jsonResponse.soil, 'Well-draining potting mix.'),
+        temperature: ensureString(jsonResponse.temperature, '65-80°F (18-27°C)'),
+        humidity: ensureString(jsonResponse.humidity, 'Moderate humidity is suitable for many plants.'),
+        additionalTips: ensureString(jsonResponse.additionalTips, 'Research specific care requirements for this plant species.'),
+        summary: ensureString(jsonResponse.summary, 'Provide moderate water, bright indirect light, and well-draining soil.'),
+        homeRemedies: ensureString(jsonResponse.homeRemedies, 'No specific home remedies information available.'),
+        culturalSignificance: ensureString(jsonResponse.culturalSignificance, 'No specific cultural significance information available.')
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting plant care recommendations:', error);
+    
+    // Check for quota exceeded errors
+    if (error.message && (
+      error.message.includes('quota') || 
+      error.message.includes('limit') || 
+      error.message.includes('exceeded') ||
+      error.message.includes('RESOURCE_EXHAUSTED')
+    )) {
+      return {
+        watering: 'API Quota Exceeded: Service temporarily unavailable.',
+        light: 'Please try again later.',
+        soil: 'Well-draining potting mix is generally recommended for most plants.',
+        temperature: '65-80°F (18-27°C) is suitable for many houseplants.',
+        additionalTips: 'The API quota has been exceeded. This is a temporary issue.',
+        summary: 'API Quota Exceeded: The service is temporarily unavailable. Please try again later or contact support for assistance.',
+        humidity: 'Moderate humidity is suitable for many plants.',
+        homeRemedies: 'Unable to provide specific home remedies due to service limitations.',
+        culturalSignificance: 'Unable to provide cultural significance information due to service limitations.'
+      };
+    }
     
     // Return fallback data in case of error
     return {
       watering: 'Water when the top inch of soil feels dry.',
-      light: 'Provide bright, indirect light.',
-      soil: 'Use well-draining potting mix.',
-      temperature: 'Keep in normal room temperature (65-75°F/18-24°C).',
-      additionalTips: 'Regularly check for pests and diseases.',
-      summary: `Care guide for ${plantName}. Water appropriately, provide adequate light, and monitor regularly.`,
-      humidity: 'Average humidity levels recommended',
-      homeRemedies: 'No specific home remedies information available.',
-      culturalSignificance: 'No specific cultural significance information available.'
+      light: 'Moderate to bright indirect light.',
+      soil: 'Well-draining potting mix.',
+      temperature: '65-80°F (18-27°C)',
+      additionalTips: 'Research specific care requirements for this plant species.',
+      summary: 'Unable to retrieve specific care information. Provide moderate water, bright indirect light, and well-draining soil as a general guideline.',
+      humidity: 'Moderate humidity is suitable for many plants.',
+      homeRemedies: 'Common home remedies include using diluted neem oil for pest control and coffee grounds as natural fertilizer.',
+      culturalSignificance: 'Plants have been valued in many cultures for their aesthetic, medicinal, and spiritual properties.'
     };
   }
 }; 

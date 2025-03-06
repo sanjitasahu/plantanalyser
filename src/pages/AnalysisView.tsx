@@ -41,7 +41,7 @@ import {
   Save as SaveIcon,
   Share as ShareIcon,
   CameraAlt as CameraIcon,
-  Spa as EcoIcon,
+  LocalFlorist as EcoIcon,
   Public as CultureIcon
 } from '@mui/icons-material';
 
@@ -50,7 +50,7 @@ import { usePlants } from '../context/PlantContext';
 
 const AnalysisView: React.FC = () => {
   const navigate = useNavigate();
-  const { currentImage, currentAnalysis, isAnalyzing, analyzeCurrentImage, clearCurrentAnalysis } = useAnalysis();
+  const { currentImage, currentAnalysis, isAnalyzing, analyzeCurrentImage, clearCurrentAnalysis, error } = useAnalysis();
   const { addPlant, updatePlant } = usePlants();
   
   const [activeStep, setActiveStep] = useState(0);
@@ -64,7 +64,7 @@ const AnalysisView: React.FC = () => {
       return;
     }
     
-    if (!currentAnalysis && !isAnalyzing) {
+    if (!currentAnalysis && !isAnalyzing && !error) {
       analyzeCurrentImage();
     }
     
@@ -75,7 +75,7 @@ const AnalysisView: React.FC = () => {
     } else {
       setActiveStep(0);
     }
-  }, [currentImage, currentAnalysis, isAnalyzing, navigate, analyzeCurrentImage]);
+  }, [currentImage, currentAnalysis, isAnalyzing, navigate, analyzeCurrentImage, error]);
 
   const handleSaveToCollection = async () => {
     if (!currentAnalysis) return;
@@ -212,8 +212,37 @@ const AnalysisView: React.FC = () => {
           </Box>
         )}
 
+        {/* Error State */}
+        {error && !isAnalyzing && (
+          <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 2, mb: 3 }}>
+            <Typography variant="h6" color="error" gutterBottom>
+              {error.includes('quota') ? 'API Quota Exceeded' : 'Analysis Error'}
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {error.includes('quota') 
+                ? 'The daily limit for plant analysis has been reached. This is a temporary issue that typically resets after 24 hours.' 
+                : error}
+            </Typography>
+            {error.includes('quota') && (
+              <Typography variant="body2" color="text.secondary" paragraph>
+                This can happen when many users are analyzing plants at the same time. 
+                Please try again later when the quota resets, or try using the app on WiFi instead of mobile data.
+              </Typography>
+            )}
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<CameraIcon />}
+              onClick={() => navigate('/camera')}
+              sx={{ mt: 2 }}
+            >
+              Try Again
+            </Button>
+          </Paper>
+        )}
+
         {/* Error State - No Image */}
-        {!currentImage && !isAnalyzing && (
+        {!currentImage && !isAnalyzing && !error && (
           <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
             <Typography variant="h6" color="error" gutterBottom>
               No Image Available
@@ -471,7 +500,9 @@ const AnalysisView: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                     <EcoIcon color="success" sx={{ mr: 2, mt: 0.5 }} />
                     <Typography variant="body1">
-                      {currentAnalysis.care.homeRemedies || 'No specific home remedies information available.'}
+                      {typeof currentAnalysis.care.homeRemedies === 'string' 
+                        ? currentAnalysis.care.homeRemedies 
+                        : 'No specific home remedies information available.'}
                     </Typography>
                   </Box>
                 </AccordionDetails>
@@ -505,7 +536,9 @@ const AnalysisView: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                     <CultureIcon color="warning" sx={{ mr: 2, mt: 0.5 }} />
                     <Typography variant="body1">
-                      {currentAnalysis.care.culturalSignificance || 'No specific cultural significance information available.'}
+                      {typeof currentAnalysis.care.culturalSignificance === 'string' 
+                        ? currentAnalysis.care.culturalSignificance 
+                        : 'No specific cultural significance information available.'}
                     </Typography>
                   </Box>
                 </AccordionDetails>
