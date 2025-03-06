@@ -11,15 +11,20 @@ import {
   AppBar,
   Toolbar,
   Divider,
-  Container
+  Container,
+  Link as MuiLink
 } from '@mui/material';
 import { 
   Send as SendIcon, 
   ArrowBack as ArrowBackIcon,
-  LocalFlorist as PlantIcon
+  LocalFlorist as PlantIcon,
+  ContentCopy as CopyIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Initialize the Gemini API with the API key from environment variables
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
@@ -41,12 +46,13 @@ const ExpertChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [chatModel, setChatModel] = useState<any>(null);
+  const [showMarkdownInfo, setShowMarkdownInfo] = useState(false);
 
   // Initialize chat with welcome message
   useEffect(() => {
     const initialMessage: Message = {
       id: '1',
-      text: "Hello! I'm your plant expert assistant. I can help with plant identification, care tips, troubleshooting plant problems, and answer any questions about gardening. How can I assist you today?",
+      text: "# Welcome to Plant Expert Chat! 🌱\n\nI'm your plant expert assistant. I can help with:\n\n- Plant identification\n- Care tips and watering schedules\n- Troubleshooting plant problems\n- Gardening advice\n- Seasonal plant care\n\nHow can I assist you today?",
       sender: 'bot',
       timestamp: new Date()
     };
@@ -60,11 +66,11 @@ const ExpertChat: React.FC = () => {
           history: [
             {
               role: "user",
-              parts: [{ text: "I want to talk about plants, gardening, and plant care. I might ask for identification help, care tips, or troubleshooting advice." }],
+              parts: [{ text: "I want to talk about plants, gardening, and plant care. I might ask for identification help, care tips, or troubleshooting advice. Please use Markdown formatting in your responses to make them more structured and readable. Use headings, lists, tables, and other formatting as appropriate." }],
             },
             {
               role: "model",
-              parts: [{ text: "I'd be happy to discuss plants, gardening, and plant care with you! I can provide information on plant identification, care requirements, troubleshooting common issues, and general gardening advice. Feel free to ask any questions you have about your plants or gardening projects." }],
+              parts: [{ text: "# Welcome to Plant Expert Chat! 🌱\n\nI'd be happy to discuss plants, gardening, and plant care with you! I can provide information on plant identification, care requirements, troubleshooting common issues, and general gardening advice.\n\nI'll use Markdown formatting to make my responses clear and structured. Feel free to ask any questions you have about your plants or gardening projects." }],
             },
           ],
           generationConfig: {
@@ -106,7 +112,10 @@ const ExpertChat: React.FC = () => {
     setError(null);
     
     try {
-      const result = await chatModel.sendMessage([{ text: inputText.trim() }]);
+      // Add instructions to use Markdown in the prompt
+      const enhancedPrompt = inputText.trim() + "\n\nPlease format your response using Markdown with headings, lists, and other formatting as appropriate to make the information clear and structured.";
+      
+      const result = await chatModel.sendMessage([{ text: enhancedPrompt }]);
       const response = await result.response;
       const responseText = response.text();
       
@@ -149,6 +158,18 @@ const ExpertChat: React.FC = () => {
     }
   };
 
+  // Handle copying message text
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        // Could show a snackbar or toast here
+        console.log('Text copied to clipboard');
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+      });
+  };
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* App Bar */}
@@ -162,7 +183,7 @@ const ExpertChat: React.FC = () => {
           >
             <ArrowBackIcon />
           </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <Avatar sx={{ bgcolor: 'white', mr: 1 }}>
               <PlantIcon sx={{ color: '#4CAF50' }} />
             </Avatar>
@@ -170,8 +191,46 @@ const ExpertChat: React.FC = () => {
               Plant Expert
             </Typography>
           </Box>
+          <IconButton 
+            color="inherit" 
+            onClick={() => setShowMarkdownInfo(!showMarkdownInfo)}
+            sx={{ color: 'white' }}
+          >
+            <InfoIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
+
+      {/* Markdown Info */}
+      {showMarkdownInfo && (
+        <Paper 
+          elevation={1} 
+          sx={{ 
+            m: 2, 
+            p: 2, 
+            bgcolor: '#E8F5E9', 
+            borderRadius: 2,
+            border: '1px solid #C8E6C9'
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Markdown Support
+          </Typography>
+          <Typography variant="body2">
+            This chat supports Markdown formatting. The AI can provide structured responses with:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2, mt: 1 }}>
+            <li>Headings and subheadings</li>
+            <li>Bulleted and numbered lists</li>
+            <li>Tables for organized data</li>
+            <li>Bold and italic text for emphasis</li>
+            <li>Code blocks for technical instructions</li>
+          </Box>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Try asking for care instructions or plant information to see formatted responses.
+          </Typography>
+        </Paper>
+      )}
 
       {/* Chat Messages */}
       <Box sx={{ 
@@ -193,7 +252,7 @@ const ExpertChat: React.FC = () => {
               }}
             >
               {message.sender === 'bot' && (
-                <Avatar sx={{ bgcolor: '#4CAF50', mr: 1 }}>
+                <Avatar sx={{ bgcolor: '#4CAF50', mr: 1, alignSelf: 'flex-start', mt: 1 }}>
                   <PlantIcon />
                 </Avatar>
               )}
@@ -201,22 +260,77 @@ const ExpertChat: React.FC = () => {
                 elevation={1}
                 sx={{
                   p: 2,
-                  maxWidth: '70%',
+                  maxWidth: '80%',
                   borderRadius: 2,
                   bgcolor: message.sender === 'user' ? '#E3F2FD' : 'white',
                   borderTopLeftRadius: message.sender === 'bot' ? 0 : 2,
-                  borderTopRightRadius: message.sender === 'user' ? 0 : 2
+                  borderTopRightRadius: message.sender === 'user' ? 0 : 2,
+                  position: 'relative'
                 }}
               >
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {message.text}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'right' }}>
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Typography>
+                {message.sender === 'bot' ? (
+                  <Box sx={{ '& > *': { maxWidth: '100%' } }}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ node, ...props }) => <Typography variant="h5" gutterBottom fontWeight="bold" color="primary" {...props} />,
+                        h2: ({ node, ...props }) => <Typography variant="h6" gutterBottom fontWeight="bold" color="primary" {...props} />,
+                        h3: ({ node, ...props }) => <Typography variant="subtitle1" gutterBottom fontWeight="bold" {...props} />,
+                        h4: ({ node, ...props }) => <Typography variant="subtitle2" gutterBottom fontWeight="bold" {...props} />,
+                        p: ({ node, ...props }) => <Typography variant="body1" paragraph {...props} />,
+                        a: ({ node, ...props }) => <MuiLink color="primary" {...props} />,
+                        ul: ({ node, ...props }) => <Box component="ul" sx={{ pl: 2 }} {...props} />,
+                        ol: ({ node, ...props }) => <Box component="ol" sx={{ pl: 2 }} {...props} />,
+                        li: ({ node, ...props }) => <Box component="li" sx={{ mb: 0.5 }} {...props} />,
+                        table: ({ node, ...props }) => (
+                          <Box sx={{ overflowX: 'auto', my: 2 }}>
+                            <table style={{ borderCollapse: 'collapse', width: '100%' }} {...props} />
+                          </Box>
+                        ),
+                        tr: ({ node, ...props }) => <tr style={{ borderBottom: '1px solid #e0e0e0' }} {...props} />,
+                        th: ({ node, ...props }) => <th style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold', backgroundColor: '#f5f5f5' }} {...props} />,
+                        td: ({ node, ...props }) => <td style={{ padding: '8px', textAlign: 'left' }} {...props} />,
+                        code: (props) => {
+                          const { children } = props;
+                          return props.className 
+                            ? <Box component="pre" sx={{ bgcolor: '#f5f5f5', p: 1.5, borderRadius: 1, overflowX: 'auto', fontFamily: 'monospace' }}>{children}</Box>
+                            : <Box component="code" sx={{ bgcolor: '#f5f5f5', p: 0.3, borderRadius: 0.5, fontFamily: 'monospace' }}>{children}</Box>;
+                        },
+                        blockquote: ({ node, ...props }) => (
+                          <Box component="blockquote" sx={{ borderLeft: '4px solid #4CAF50', pl: 2, py: 0.5, my: 1, color: 'text.secondary' }} {...props} />
+                        ),
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+                  </Box>
+                ) : (
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {message.text}
+                  </Typography>
+                )}
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mt: 1
+                }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Typography>
+                  {message.sender === 'bot' && (
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleCopyMessage(message.text)}
+                      sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}
+                    >
+                      <CopyIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
               </Paper>
               {message.sender === 'user' && (
-                <Avatar sx={{ bgcolor: '#2196F3', ml: 1 }} />
+                <Avatar sx={{ bgcolor: '#2196F3', ml: 1, alignSelf: 'flex-start', mt: 1 }} />
               )}
             </Box>
           ))}
