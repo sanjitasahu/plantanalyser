@@ -18,10 +18,10 @@ import PlantDetail from './pages/PlantDetail';
 import AddPlant from './pages/AddPlant';
 import CameraView from './pages/CameraView';
 import AnalysisView from './pages/AnalysisView';
-import DiagnosisPage from './pages/DiagnosisPage';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import GeminiDemo from './pages/GeminiDemo';
+import ExpertChat from './pages/ExpertChat';
 
 // Create a theme
 const theme = createTheme({
@@ -128,12 +128,6 @@ const AppRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/diagnose" element={
-        <ProtectedRoute>
-          <DiagnosisPage />
-        </ProtectedRoute>
-      } />
-      
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
@@ -141,6 +135,12 @@ const AppRoutes: React.FC = () => {
       } />
       
       <Route path="/gemini-demo" element={<GeminiDemo />} />
+      
+      <Route path="/expert-chat" element={
+        <ProtectedRoute>
+          <ExpertChat />
+        </ProtectedRoute>
+      } />
       
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -172,7 +172,7 @@ const Dashboard: React.FC = () => {
             <Grid item xs={4} sm={4}>
               <Box 
                 component={Link} 
-                to="/camera"
+                to="/expert-chat"
                 sx={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
