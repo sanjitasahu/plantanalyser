@@ -22,6 +22,7 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import GeminiDemo from './pages/GeminiDemo';
 import ExpertChat from './pages/ExpertChat';
+import ImageUploadView from './pages/ImageUploadView';
 
 // Create a theme
 const theme = createTheme({
@@ -119,6 +120,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/camera" element={
         <ProtectedRoute>
           <CameraView />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/upload-image" element={
+        <ProtectedRoute>
+          <ImageUploadView />
         </ProtectedRoute>
       } />
       

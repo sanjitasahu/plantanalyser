@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
   // Function to handle navigation to camera/analyze
   const handleNavigateToAnalyze = () => {
     clearCurrentAnalysis(); // Clear any previous analysis data
-    navigate('/camera');
+    navigate('/upload-image');
   };
 
   return (
