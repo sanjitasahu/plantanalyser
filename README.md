@@ -1,4 +1,4 @@
-# MySanctuary Plant Analyzer
+# PlantAnalyser
 
 A mobile-friendly application for plant identification, health diagnosis, and care recommendations using Google's Gemini Vision AI.
 
@@ -17,7 +17,7 @@ A mobile-friendly application for plant identification, health diagnosis, and ca
 - TypeScript
 - Material UI
 - Google Gemini API
-- Firebase
+- Firebase (Hosting & Functions)
 
 ## Installation
 
@@ -30,15 +30,25 @@ A mobile-friendly application for plant identification, health diagnosis, and ca
    ```
    REACT_APP_GEMINI_API_KEY=your_api_key_here
    ```
-4. Start the development server:
+4. Install Firebase CLI and login:
+   ```
+   npm install -g firebase-tools
+   firebase login
+   ```
+5. Start the development server:
    ```
    npm start
    ```
 
+## Backend API
+
+The application uses Firebase Functions for the backend API. See the [functions README](./functions/README.md) for details on available endpoints.
+
 ## Deployment
 
-The application is deployed on Firebase Hosting:
-- https://mysanctuary-new.web.app
+The application is deployed on Firebase:
+- Frontend: https://plantanalyser-99e62.web.app
+- Backend API: https://plantanalyser-99e62.web.app/api/
 
 ## License
 
