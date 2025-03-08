@@ -1,10 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 // Context Providers
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { PlantProvider } from './context/PlantContext';
 import { AnalysisProvider } from './context/AnalysisContext';
 import { CameraProvider } from './context/CameraContext';
@@ -72,83 +72,21 @@ const theme = createTheme({
   },
 });
 
-// Protected route component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
-};
-
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/plants" element={
-        <ProtectedRoute>
-          <PlantList />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/plants/:id" element={
-        <ProtectedRoute>
-          <PlantDetail />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/add-plant" element={
-        <ProtectedRoute>
-          <AddPlant />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/camera" element={
-        <ProtectedRoute>
-          <CameraView />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/upload-image" element={
-        <ProtectedRoute>
-          <ImageUploadView />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/analyze" element={
-        <ProtectedRoute>
-          <AnalysisView />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <Settings />
-        </ProtectedRoute>
-      } />
-      
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/plants" element={<PlantList />} />
+      <Route path="/plants/:id" element={<PlantDetail />} />
+      <Route path="/add-plant" element={<AddPlant />} />
+      <Route path="/camera" element={<CameraView />} />
+      <Route path="/upload-image" element={<ImageUploadView />} />
+      <Route path="/analyze" element={<AnalysisView />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="/gemini-demo" element={<GeminiDemo />} />
-      
-      <Route path="/expert-chat" element={
-        <ProtectedRoute>
-          <ExpertChat />
-        </ProtectedRoute>
-      } />
-      
+      <Route path="/expert-chat" element={<ExpertChat />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
