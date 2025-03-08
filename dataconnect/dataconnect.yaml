@@ -1,0 +1,12 @@
+specVersion: "v1beta"
+serviceId: "plantanalyser"
+location: "northamerica-northeast1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "plantanalyser-db"
+      cloudSql:
+        instanceId: "plantanalyzer-cloudsql"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
